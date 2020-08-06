@@ -57,10 +57,9 @@ public class QuerydslBasic {
     @Test
     public void startQuerydsl() {
 
-        QMember m = new QMember("m");
-        Member member = jpaQueryFactory.select(m)
-                .from(m)
-                .where(m.username.eq("member1"))
+        Member member = jpaQueryFactory.select(QMember.member)
+                .from(QMember.member)
+                .where(QMember.member.username.eq("member1"))
                 .fetchOne();
         assertThat(member.getUsername()).isEqualTo("member1");
     }
