@@ -179,6 +179,7 @@ public class QuerydslBasic {
 
     /**
      * 팀의 이름과 각팀의 평균 연령 구하
+     *
      * @throws Exception
      */
     @Test
@@ -197,5 +198,36 @@ public class QuerydslBasic {
 
         assertThat(teamB.get(QTeam.team.name)).isEqualTo("teamB");
         assertThat(teamB.get(QMember.member.age.avg())).isEqualTo(35);
+    }
+
+
+    /**
+     * 팀 A 에 소속된 모든 멤
+     */
+    @Test
+    public void join() {
+        List<Member> teamA = jpaQueryFactory.selectFrom(QMember.member)
+                .join(QMember.member.team, QTeam.team)
+                .where(QTeam.team.name.eq("teamA"))
+                .fetch();
+
+        assertThat(teamA)
+                .extracting("username")
+                .containsExactly("member1", "member2");
+    }
+
+    @Test
+    public void thetaJoin() throws Exception {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+
+        List<Member> result = jpaQueryFactory.select(QMember.member)
+                .from(QMember.member, QTeam.team)
+                .where(QMember.member.username.eq(QTeam.team.name))
+                .fetch();
+
+        assertThat(result)
+                .extracting("username")
+                .containsExactly("teamA", "teamB");
     }
 }
