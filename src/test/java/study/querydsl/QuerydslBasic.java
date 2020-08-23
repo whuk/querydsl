@@ -230,4 +230,41 @@ public class QuerydslBasic {
                 .extracting("username")
                 .containsExactly("teamA", "teamB");
     }
+
+    /**
+     * 회원과 팀을 조인하면서 팀이름이 teamA 만 조인, 회원은 모두 조
+     */
+    @Test
+    public void joinOnFiltering() {
+        List<Tuple> teamA = jpaQueryFactory.select(QMember.member, QTeam.team)
+                .from(QMember.member)
+                .leftJoin(QMember.member.team, QTeam.team)
+                .on(QTeam.team.name.eq("teamA"))
+                .fetch();
+        for (Tuple tuple : teamA) {
+            System.out.println("Tuple = " + tuple);
+        }
+    }
+
+    /**
+     * 연관관계가 없는 외부 조인
+     * 회원 이름이 팀이름과 같은 대상 외부 조
+     */
+    @Test
+    public void joinOnNoRelation() {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        List<Tuple> result = jpaQueryFactory.select(QMember.member, QTeam.team)
+                .from(QMember.member)
+                .leftJoin(QTeam.team)
+                .on(QMember.member.username.eq(QTeam.team.name))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("Tuple = " + tuple);
+
+        }
+    }
 }
