@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -297,6 +298,73 @@ public class QuerydslBasic {
                 .fetchOne();
 
         boolean loaded = entityManagerFactory.getPersistenceUnitUtil().isLoaded(member1.getTeam());
-        assertThat(loaded).as("패치 조인 적용").isTrue();
+        assertThat(loaded).as("패치 조인 적").isTrue();
+    }
+
+    /**
+     * 나이가 가장 많은 회원 조회
+     */
+    @Test
+    public void subQuery() {
+
+        QMember subMember = new QMember("subMember");
+
+        List<Member> result = jpaQueryFactory.selectFrom(QMember.member)
+                .where(QMember.member.age.eq(
+                        JPAExpressions.select(subMember.age.max())
+                                .from(subMember)
+                )).fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(40);
+    }
+
+    /**
+     * 나이가 평균 이상인 회원 조회
+     */
+    @Test
+    public void subQueryGoeAvgAge() {
+
+        QMember subMember = new QMember("subMember");
+
+        List<Member> result = jpaQueryFactory.selectFrom(QMember.member)
+                .where(QMember.member.age.goe(
+                        JPAExpressions.select(subMember.age.avg())
+                                .from(subMember)
+                )).fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(30, 40);
+    }
+
+    @Test
+    public void subQueryIn() {
+
+        QMember subMember = new QMember("subMember");
+
+        List<Member> result = jpaQueryFactory.selectFrom(QMember.member)
+                .where(QMember.member.age.in(
+                        JPAExpressions.select(subMember.age)
+                                .from(subMember)
+                                .where(subMember.age.gt(10))
+                )).fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(20, 30, 40);
+    }
+
+    /**
+     * from 의 서브쿼리 (인라인뷰) 는 JPQL 이 지원하지 않기 때문에 querydsl 도 지원하지 않는다.
+     */
+    @Test
+    public void selectSubQuery() {
+        QMember subMember = new QMember("subMember");
+        List<Tuple> result = jpaQueryFactory.select(QMember.member.username,
+                JPAExpressions
+                        .select(subMember.age.avg())
+                        .from(subMember))
+                .from(QMember.member)
+                .fetch();
+        result.stream().forEach(tuple -> System.out.println(tuple));
     }
 }
