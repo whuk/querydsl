@@ -367,4 +367,17 @@ public class QuerydslBasic {
                 .fetch();
         result.stream().forEach(tuple -> System.out.println(tuple));
     }
+
+    @Test
+    public void tupleProjection() {
+        List<Tuple> result = jpaQueryFactory
+                .select(QMember.member.username, QMember.member.age)
+                .from(QMember.member)
+                .fetch();
+
+        for (Tuple t : result) {
+            System.out.println(t.get(QMember.member.username) + "/" + t.get(QMember.member.age));
+        }
+    }
+
 }
