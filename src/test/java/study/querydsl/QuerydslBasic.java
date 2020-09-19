@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
@@ -439,5 +440,29 @@ public class QuerydslBasic {
         for (MemberDto memberDto : result) {
             System.out.println("memberDto = " + memberDto);
         }
+    }
+
+    @Test
+    public void dynamicQueryBooleanBuilder() {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember1(usernameParam, ageParam);
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    private List<Member> searchMember1(String usernameCond, Integer ageCond) {
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+
+        if (usernameCond != null) {
+            booleanBuilder.and(QMember.member.username.eq(usernameCond));
+        }
+
+        if (ageCond != null) {
+            booleanBuilder.and(QMember.member.age.eq(ageCond));
+        }
+        return jpaQueryFactory.selectFrom(QMember.member)
+                .where(booleanBuilder)
+                .fetch();
     }
 }
