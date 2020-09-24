@@ -495,4 +495,86 @@ public class QuerydslBasic {
     private BooleanExpression allEq(String usernameCond, Integer ageCond) {
         return usernameCond != null && ageCond != null ? usernameEq(usernameCond).and(ageEq(ageCond)) : null;
     }
+
+    @Test
+    public void bulkUpdate() {
+        // member1 = 10 -> DB member1
+        // member2 = 20 -> DB member2
+        // member3 = 30 -> DB member3
+        // member4 = 40 -> DB member4
+
+        // 영속성 컨텍스트 상태에 주의해야함.
+        // 1차캐시를 무시하고 db에 바로 부어버림. 연산 후에 영속성 컨텍스트랑 db랑 상태가 다름
+        long count = jpaQueryFactory.update(QMember.member)
+                .set(QMember.member.username, "비회원")
+                .where(QMember.member.age.lt(28))
+                .execute();
+
+        // member1 = 10 -> DB 비회원
+        // member2 = 20 -> DB 비회원
+        // member3 = 30 -> DB member3
+        // member4 = 40 -> DB member4
+
+        // 여기서 select 하면 쿼리는 나가지만 값은 1차캐시 값을 가져와서
+        // 업데이트가 안된것처러 보임
+        // 리피터블 리드 관련됨
+        List<Member> members = jpaQueryFactory.selectFrom(QMember.member)
+                .fetch();
+
+        for (Member member : members) {
+            System.out.println(member);
+        }
+
+        // 그래서 벌크 연산 후에는 영속성 컨텍스트를 날려야함
+        em.flush();
+        em.clear();
+
+        List<Member> updatedMembers = jpaQueryFactory.selectFrom(QMember.member)
+                .fetch();
+
+        for (Member member : updatedMembers) {
+            System.out.println(member);
+        }
+    }
+
+    @Test
+    public void bulkAdd() {
+        long count = jpaQueryFactory
+                .update(QMember.member)
+                .set(QMember.member.age, QMember.member.age.multiply(2))
+                .execute();
+
+        List<Member> members = jpaQueryFactory.selectFrom(QMember.member)
+                .fetch();
+
+        for (Member member : members) {
+            System.out.println(member);
+        }
+
+        // 벌크 연산 후에는 영속성 컨텍스트를 날려야함
+        em.flush();
+        em.clear();
+
+        List<Member> updatedMembers = jpaQueryFactory.selectFrom(QMember.member)
+                .fetch();
+
+        for (Member member : updatedMembers) {
+            System.out.println(member);
+        }
+    }
+
+    @Test
+    public void bulkDelete() {
+        long count = jpaQueryFactory.delete(QMember.member)
+                .where(QMember.member.age.lt(18))
+                .execute();
+
+        // 삭제는 바로 반영됨
+        List<Member> members = jpaQueryFactory.selectFrom(QMember.member)
+                .fetch();
+
+        for (Member member : members) {
+            System.out.println(member);
+        }
+    }
 }
