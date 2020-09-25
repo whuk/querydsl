@@ -6,6 +6,7 @@ import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -575,6 +576,35 @@ public class QuerydslBasic {
 
         for (Member member : members) {
             System.out.println(member);
+        }
+    }
+
+    @Test
+    public void sqlFunction() {
+        List<String> result = jpaQueryFactory
+                .select(Expressions.stringTemplate(
+                        "function('replace', {0}, {1}, {2})", QMember.member.username, "member", "M"
+                )).from(QMember.member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+
+    @Test
+    public void sqlFunction2() {
+        List<Member> result = jpaQueryFactory
+                .select(QMember.member)
+                .from(QMember.member)
+//                .where(QMember.member.username.eq(
+//                        Expressions.stringTemplate(
+//                                "function('lower', {0})", QMember.member.username)))
+//
+                .where(QMember.member.username.eq(QMember.member.username.lower()))
+                .fetch();
+        for (Member member : result) {
+            System.out.println("s = " + member);
         }
     }
 }
