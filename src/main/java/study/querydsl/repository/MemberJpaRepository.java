@@ -1,9 +1,15 @@
 package study.querydsl.repository;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
+import study.querydsl.dto.MemberSearchCondition;
+import study.querydsl.dto.MemberTeamDto;
+import study.querydsl.dto.QMemberTeamDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
+import study.querydsl.entity.QTeam;
 
 import javax.persistence.EntityManager;
 import java.util.List;
@@ -48,6 +54,38 @@ public class MemberJpaRepository {
     public List<Member> findByUsername_querydsl(String username) {
         return jpaQueryFactory.selectFrom(QMember.member)
                 .where(QMember.member.username.eq(username))
+                .fetch();
+    }
+
+    public List<MemberTeamDto> searchByBuilder(MemberSearchCondition memberSearchCondition) {
+        BooleanBuilder booleanBuilder = new BooleanBuilder();
+        if (StringUtils.hasText(memberSearchCondition.getUsername())) {
+            booleanBuilder.and(QMember.member.username.eq(memberSearchCondition.getUsername()));
+        }
+
+        if (StringUtils.hasText(memberSearchCondition.getTeamName())) {
+            booleanBuilder.and(QTeam.team.name.eq(memberSearchCondition.getTeamName()));
+        }
+
+        if (memberSearchCondition.getAgeGoe() != null) {
+            booleanBuilder.and(QMember.member.age.goe(memberSearchCondition.getAgeGoe()));
+        }
+
+        if (memberSearchCondition.getAgeLoe() != null) {
+            booleanBuilder.and(QMember.member.age.loe(memberSearchCondition.getAgeLoe()));
+        }
+
+        return jpaQueryFactory
+                .select(new QMemberTeamDto(
+                        QMember.member.id.as("memberId"),
+                        QMember.member.username,
+                        QMember.member.age,
+                        QTeam.team.id.as("teamId"),
+                        QTeam.team.name.as("teamName")
+                ))
+                .from(QMember.member)
+                .leftJoin(QMember.member.team, QTeam.team)
+                .where(booleanBuilder)
                 .fetch();
     }
 }
