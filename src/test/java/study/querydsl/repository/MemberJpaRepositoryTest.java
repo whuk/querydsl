@@ -69,7 +69,8 @@ class MemberJpaRepositoryTest {
         memberSearchCondition.setAgeLoe(40);
         memberSearchCondition.setTeamName("teamB");
 
-        List<MemberTeamDto> memberTeamDtos = memberJpaRepository.searchByBuilder(memberSearchCondition);
+//        List<MemberTeamDto> memberTeamDtos = memberJpaRepository.searchByBuilder(memberSearchCondition);
+        List<MemberTeamDto> memberTeamDtos = memberJpaRepository.search(memberSearchCondition);
         assertThat(memberTeamDtos).extracting("username").containsExactly("member4");
     }
 
@@ -94,7 +95,8 @@ class MemberJpaRepositoryTest {
 
         MemberSearchCondition memberSearchCondition = new MemberSearchCondition();
 
-        List<MemberTeamDto> memberTeamDtos = memberJpaRepository.searchByBuilder(memberSearchCondition);
+//        List<MemberTeamDto> memberTeamDtos = memberJpaRepository.searchByBuilder(memberSearchCondition);
+        List<MemberTeamDto> memberTeamDtos = memberJpaRepository.search(memberSearchCondition);
         assertThat(memberTeamDtos).extracting("username").containsExactly("member1", "member2", "member3", "member4");
     }
 }
