@@ -1,7 +1,11 @@
 package study.querydsl.repository;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 import study.querydsl.dto.MemberSearchCondition;
 import study.querydsl.dto.MemberTeamDto;
@@ -38,6 +42,82 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         ageGoe(memberSearchCondition.getAgeGoe()),
                         ageLoe(memberSearchCondition.getAgeLoe())
                 )
+                .fetch();
+    }
+
+    @Override
+    public Page<MemberTeamDto> searchPageSimple(MemberSearchCondition memberSearchCondition, Pageable pageable) {
+        QueryResults<MemberTeamDto> results = jpaQueryFactory
+                .select(new QMemberTeamDto(
+                        QMember.member.id.as("memberId"),
+                        QMember.member.username,
+                        QMember.member.age,
+                        QTeam.team.id.as("teamId"),
+                        QTeam.team.name.as("teamName")
+                ))
+                .from(QMember.member)
+                .leftJoin(QMember.member.team, QTeam.team)
+                .where(
+                        usernameEq(memberSearchCondition.getUsername()),
+                        teamNameEq(memberSearchCondition.getTeamName()),
+                        ageGoe(memberSearchCondition.getAgeGoe()),
+                        ageLoe(memberSearchCondition.getAgeLoe())
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetchResults();    // fetchResult 는 쿼리 최적화가 불가해서 최적화를 위해 별도로 만
+
+        List<MemberTeamDto> content = results.getResults();
+        long total = results.getTotal();
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public Page<MemberTeamDto> searchPageComplex(MemberSearchCondition memberSearchCondition, Pageable pageable) {
+        return new PageImpl<>(getMemberTeamDtos(memberSearchCondition, pageable),
+                pageable,
+                getTotal(memberSearchCondition));
+    }
+
+    private long getTotal(MemberSearchCondition memberSearchCondition) {
+        return jpaQueryFactory
+                .select(new QMemberTeamDto(
+                        QMember.member.id.as("memberId"),
+                        QMember.member.username,
+                        QMember.member.age,
+                        QTeam.team.id.as("teamId"),
+                        QTeam.team.name.as("teamName")
+                ))
+                .from(QMember.member)
+                .leftJoin(QMember.member.team, QTeam.team)
+                .where(
+                        usernameEq(memberSearchCondition.getUsername()),
+                        teamNameEq(memberSearchCondition.getTeamName()),
+                        ageGoe(memberSearchCondition.getAgeGoe()),
+                        ageLoe(memberSearchCondition.getAgeLoe())
+                )
+                .fetchCount();
+    }
+
+    private List<MemberTeamDto> getMemberTeamDtos(MemberSearchCondition memberSearchCondition, Pageable pageable) {
+        return jpaQueryFactory
+                .select(new QMemberTeamDto(
+                        QMember.member.id.as("memberId"),
+                        QMember.member.username,
+                        QMember.member.age,
+                        QTeam.team.id.as("teamId"),
+                        QTeam.team.name.as("teamName")
+                ))
+                .from(QMember.member)
+                .leftJoin(QMember.member.team, QTeam.team)
+                .where(
+                        usernameEq(memberSearchCondition.getUsername()),
+                        teamNameEq(memberSearchCondition.getTeamName()),
+                        ageGoe(memberSearchCondition.getAgeGoe()),
+                        ageLoe(memberSearchCondition.getAgeLoe())
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
     }
 
